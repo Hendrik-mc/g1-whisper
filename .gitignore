@@ -1,0 +1,38 @@
+# Android
+*.iml
+.gradle
+/local.properties
+/.idea
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Keystore files — NEVER commit
+*.jks
+*.keystore
+keystore.properties
+
+# Generated files
+bin/
+gen/
+out/
+release/
+
+# Gradle wrapper
+!gradle/wrapper/gradle-wrapper.jar
+
+# IntelliJ / Android Studio
+*.idea/
+*.ipr
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env / secrets
+.env
+*.env
+google-services.json

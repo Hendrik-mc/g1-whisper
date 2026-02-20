@@ -1,0 +1,117 @@
+name: Release — Sign & Publish APK
+
+on:
+  push:
+    tags:
+      - 'v*'   # Trigger on tags like v1.0.0, v1.2.3
+
+jobs:
+  release:
+    name: Build Signed Release APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # ── 1. Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── 2. Java 17 ───────────────────────────────────────────────────────────
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      # ── 3. Gradle cache ──────────────────────────────────────────────────────
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      # ── 4. Make gradlew executable ───────────────────────────────────────────
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      # ── 5. Write local.properties with API key ───────────────────────────────
+      - name: Create local.properties
+        run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > local.properties
+
+      # ── 6. Extract version name from tag (e.g. v1.2.3 → 1.2.3) ─────────────
+      - name: Extract version name
+        id: version
+        run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      # ── 7. Decode base64 keystore → file ────────────────────────────────────
+      # The keystore itself is NEVER in the repo; it lives as a base64 Secret.
+      - name: Decode keystore
+        run: |
+          echo "${{ secrets.EVENAI_KEYSTORE_BASE64 }}" | base64 --decode > release.jks
+
+      # ── 8. Build signed release APK ──────────────────────────────────────────
+      - name: Build release APK
+        env:
+          EVENAI_KEYSTORE_BASE64:   ${{ secrets.EVENAI_KEYSTORE_BASE64 }}
+          EVENAI_KEYSTORE_PASSWORD: ${{ secrets.EVENAI_KEYSTORE_PASSWORD }}
+          EVENAI_KEY_ALIAS:         ${{ secrets.EVENAI_KEY_ALIAS }}
+          EVENAI_KEY_PASSWORD:      ${{ secrets.EVENAI_KEY_PASSWORD }}
+        run: |
+          ./gradlew assembleRelease \
+            -PversionCode=${{ github.run_number }} \
+            -PversionName=${{ steps.version.outputs.VERSION_NAME }} \
+            --no-daemon --stacktrace
+
+      # ── 9. Rename APK to include version ────────────────────────────────────
+      - name: Rename APK
+        run: |
+          mv app/build/outputs/apk/release/app-release.apk \
+             app/build/outputs/apk/release/g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk
+
+      # ── 10. Generate checksums ───────────────────────────────────────────────
+      - name: Generate checksums
+        run: |
+          cd app/build/outputs/apk/release
+          sha256sum g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk > checksums.txt
+          cat checksums.txt
+
+      # ── 11. Clean up keystore ────────────────────────────────────────────────
+      - name: Remove keystore from runner
+        if: always()
+        run: rm -f release.jks
+
+      # ── 12. Create GitHub Release with APK and checksums ─────────────────────
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: "G1 Companion ${{ github.ref_name }}"
+          body: |
+            ## G1 Companion ${{ github.ref_name }}
+
+            ### What's new
+            See [CHANGELOG](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for full commit history.
+
+            ### Installing on your phone
+            1. Download `g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk` below
+            2. On your Galaxy Z Flip 7: **Settings → Apps → Special app access → Install unknown apps → Your browser → Allow**
+            3. Open the downloaded file and tap **Install**
+            4. Open **G1 Companion** and follow the 60-second setup
+
+            ### Checksums
+            Verify your download matches `checksums.txt` to confirm file integrity.
+
+            ### Build info
+            - Version code: ${{ github.run_number }}
+            - Version name: ${{ steps.version.outputs.VERSION_NAME }}
+            - Java: 17
+          files: |
+            app/build/outputs/apk/release/g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk
+            app/build/outputs/apk/release/checksums.txt
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') || contains(github.ref_name, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
