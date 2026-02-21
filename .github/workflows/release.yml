@@ -37,22 +37,45 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      # ── 5. Write local.properties with API key ───────────────────────────────
+      # ── 5. local.properties ───────────────────────────────────────────────────
       - name: Create local.properties
         run: echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" > local.properties
 
-      # ── 6. Extract version name from tag (e.g. v1.2.3 → 1.2.3) ─────────────
+      # ── 6. Verify secrets are present before we try to build ─────────────────
+      - name: Verify signing secrets
+        run: |
+          if [ -z "${{ secrets.EVENAI_KEYSTORE_BASE64 }}" ]; then
+            echo "❌ EVENAI_KEYSTORE_BASE64 secret is not set."
+            echo "Go to: https://github.com/${{ github.repository }}/settings/secrets/actions"
+            echo "Add the 4 signing secrets: EVENAI_KEYSTORE_BASE64, EVENAI_KEYSTORE_PASSWORD, EVENAI_KEY_ALIAS, EVENAI_KEY_PASSWORD"
+            exit 1
+          fi
+          if [ -z "${{ secrets.EVENAI_KEYSTORE_PASSWORD }}" ]; then
+            echo "❌ EVENAI_KEYSTORE_PASSWORD secret is not set."
+            exit 1
+          fi
+          if [ -z "${{ secrets.EVENAI_KEY_ALIAS }}" ]; then
+            echo "❌ EVENAI_KEY_ALIAS secret is not set."
+            exit 1
+          fi
+          if [ -z "${{ secrets.EVENAI_KEY_PASSWORD }}" ]; then
+            echo "❌ EVENAI_KEY_PASSWORD secret is not set."
+            exit 1
+          fi
+          echo "✅ All signing secrets present."
+
+      # ── 7. Extract version name from tag (e.g. v1.2.3 → 1.2.3) ──────────────
       - name: Extract version name
         id: version
         run: echo "VERSION_NAME=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
-      # ── 7. Decode base64 keystore → file ────────────────────────────────────
-      # The keystore itself is NEVER in the repo; it lives as a base64 Secret.
+      # ── 8. Decode base64 keystore → file ─────────────────────────────────────
       - name: Decode keystore
         run: |
           echo "${{ secrets.EVENAI_KEYSTORE_BASE64 }}" | base64 --decode > release.jks
+          echo "Keystore size: $(wc -c < release.jks) bytes"
 
-      # ── 8. Build signed release APK ──────────────────────────────────────────
+      # ── 9. Build signed release APK ───────────────────────────────────────────
       - name: Build release APK
         env:
           EVENAI_KEYSTORE_BASE64:   ${{ secrets.EVENAI_KEYSTORE_BASE64 }}
@@ -65,25 +88,25 @@ jobs:
             -PversionName=${{ steps.version.outputs.VERSION_NAME }} \
             --no-daemon --stacktrace
 
-      # ── 9. Rename APK to include version ────────────────────────────────────
+      # ── 10. Rename APK to include version ─────────────────────────────────────
       - name: Rename APK
         run: |
           mv app/build/outputs/apk/release/app-release.apk \
              app/build/outputs/apk/release/g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk
 
-      # ── 10. Generate checksums ───────────────────────────────────────────────
+      # ── 11. Generate checksums ────────────────────────────────────────────────
       - name: Generate checksums
         run: |
           cd app/build/outputs/apk/release
           sha256sum g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk > checksums.txt
           cat checksums.txt
 
-      # ── 11. Clean up keystore ────────────────────────────────────────────────
+      # ── 12. Clean up keystore from runner ─────────────────────────────────────
       - name: Remove keystore from runner
         if: always()
         run: rm -f release.jks
 
-      # ── 12. Create GitHub Release with APK and checksums ─────────────────────
+      # ── 13. Create GitHub Release with signed APK ─────────────────────────────
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -92,22 +115,18 @@ jobs:
           body: |
             ## G1 Companion ${{ github.ref_name }}
 
-            ### What's new
-            See [CHANGELOG](https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}) for full commit history.
-
-            ### Installing on your phone
+            ### Installing on your Galaxy Z Flip 7
             1. Download `g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk` below
-            2. On your Galaxy Z Flip 7: **Settings → Apps → Special app access → Install unknown apps → Your browser → Allow**
-            3. Open the downloaded file and tap **Install**
+            2. **Settings → Apps → Special app access → Install unknown apps → Browser → Allow**
+            3. Open the downloaded file → tap **Install**
             4. Open **G1 Companion** and follow the 60-second setup
 
-            ### Checksums
-            Verify your download matches `checksums.txt` to confirm file integrity.
+            ### Verify your download
+            Check `checksums.txt` — the SHA-256 hash must match your downloaded APK.
 
             ### Build info
-            - Version code: ${{ github.run_number }}
-            - Version name: ${{ steps.version.outputs.VERSION_NAME }}
-            - Java: 17
+            - Version: ${{ steps.version.outputs.VERSION_NAME }} (code ${{ github.run_number }})
+            - Java: 17 | AGP: 8.5.2 | Kotlin: 1.9.25
           files: |
             app/build/outputs/apk/release/g1companion-${{ steps.version.outputs.VERSION_NAME }}.apk
             app/build/outputs/apk/release/checksums.txt
