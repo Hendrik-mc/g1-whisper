@@ -1,9 +1,6 @@
 package com.evenai.companion.ui.navigation
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,7 +8,6 @@ import com.evenai.companion.ui.dashboard.DashboardScreen
 import com.evenai.companion.ui.developer.DeveloperScreen
 import com.evenai.companion.ui.onboarding.OnboardingScreen
 import com.evenai.companion.ui.reconnect.ResyncScreen
-import com.evenai.companion.ui.viewmodel.MainViewModel
 
 sealed class Screen(val route: String) {
     object Onboarding  : Screen("onboarding")

@@ -100,7 +100,7 @@ fun DashboardScreen(
             verticalArrangement   = Arrangement.spacedBy(8.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            items(Widget.values()) { widget ->
+            items(Widget.entries.toTypedArray()) { widget ->
                 WidgetCard(
                     widget    = widget,
                     isActive  = widget == activeWidget,

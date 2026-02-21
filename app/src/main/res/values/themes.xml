@@ -3,7 +3,7 @@
     <!-- Base application theme. Actual theming handled by Compose Material3.
          Theme.MaterialComponents.DayNight.NoActionBar is always available
          via the material dependency pulled in transitively by Compose. -->
-    <style name="Theme.G1Companion" parent="android:Theme.Material.Light.NoTitleBar">
+    <style name="Theme.G1Companion" parent="android:Theme.Light.NoTitleBar">
         <item name="android:windowBackground">#000000</item>
         <item name="android:statusBarColor">#00000000</item>
         <item name="android:navigationBarColor">#00000000</item>

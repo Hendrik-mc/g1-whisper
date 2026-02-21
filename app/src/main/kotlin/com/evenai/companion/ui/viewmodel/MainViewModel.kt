@@ -1,9 +1,6 @@
 package com.evenai.companion.ui.viewmodel
 
 import android.app.Application
-import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothManager
-import android.content.Context
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.evenai.companion.BuildConfig
