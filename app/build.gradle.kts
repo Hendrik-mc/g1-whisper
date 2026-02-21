@@ -99,6 +99,23 @@ android {
         jvmTarget = "17"
     }
 
+    // ── Source sets ───────────────────────────────────────────────────────────
+    // Explicitly tell AGP where Kotlin sources live.
+    // kotlin-android plugin adds src/main/kotlin automatically in most setups
+    // but declaring it explicitly guarantees it works on all AGP 8.x versions.
+    sourceSets {
+        getByName("main") {
+            java.srcDirs("src/main/kotlin")
+            res.srcDirs("src/main/res")
+        }
+        getByName("test") {
+            java.srcDirs("src/test/kotlin")
+        }
+        getByName("androidTest") {
+            java.srcDirs("src/androidTest/kotlin")
+        }
+    }
+
     buildFeatures {
         compose     = true
         buildConfig = true

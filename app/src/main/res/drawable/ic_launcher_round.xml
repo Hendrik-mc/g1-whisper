@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- G1 Companion round launcher icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Background circle -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M54,0 A54,54 0 1,1 53.999,0 Z" />
+
+    <!-- Dark circle inset -->
+    <path
+        android:fillColor="#004D30"
+        android:pathData="M54,8 A46,46 0 1,1 53.999,8 Z" />
+
+    <!-- Left lens -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M20,46 Q20,38 28,38 L44,38 Q52,38 52,46 L52,62 Q52,70 44,70 L28,70 Q20,70 20,62 Z" />
+
+    <!-- Right lens -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M56,46 Q56,38 64,38 L80,38 Q88,38 88,46 L88,62 Q88,70 80,70 L64,70 Q56,70 56,62 Z" />
+
+    <!-- Bridge -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M50,51 L58,51 L58,57 L50,57 Z" />
+
+    <!-- Left temple -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M16,48 L20,48 L20,60 L16,60 Z" />
+
+    <!-- Right temple -->
+    <path
+        android:fillColor="#00C97A"
+        android:pathData="M88,48 L92,48 L92,60 L88,60 Z" />
+
+</vector>
